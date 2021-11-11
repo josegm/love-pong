@@ -1,5 +1,7 @@
 
 local push = require 'push'
+require 'paddle'
+require 'ball'
 
 WINDOW_WIDTH=1280
 WINDOW_HEIGHT=720
@@ -14,11 +16,7 @@ BALL_SIZE = 4
 
 PADDLE_SPEED = 200
 
-BALL_SPEED_X = 30
-BALL_SPEED_Y = 20
-
-require 'paddle'
-require 'ball'
+local current_state = 'splash'
 
 function love.load()
   love.graphics.setDefaultFilter('nearest', 'nearest')
@@ -33,7 +31,33 @@ function love.load()
 
   Player1 = Paddle:create(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
   Player2 = Paddle:create(VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
-  Ball = Ball:create(VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT/2, BALL_SIZE)
+  Ball = Ball:create(BALL_SIZE)
+end
+
+function resetGame()
+  Player1:reset()
+  Player2:reset()
+  Ball:reset()
+end
+
+function love.update(dt)
+  if current_state ~= 'playing' then
+    return
+  end
+
+  if love.keyboard.isDown('s') then
+    Player1:update(PADDLE_SPEED, dt)
+  elseif love.keyboard.isDown('w') then
+    Player1:update(-PADDLE_SPEED, dt)
+  end
+
+  if love.keyboard.isDown('j') then
+    Player2:update(PADDLE_SPEED, dt)
+  elseif love.keyboard.isDown('k') then
+    Player2:update(-PADDLE_SPEED, dt)
+  end
+
+  Ball:update(dt)
 end
 
 function love.draw()
@@ -47,10 +71,15 @@ function love.draw()
   -- note we are now using virtual width and height now for text placement
   love.graphics.printf('Hello LOVE!', 0, 10, VIRTUAL_WIDTH, 'center')
 
-  -- draw player1 paddle
-  Player1:render()
-  Player2:render()
-  Ball:render()
+  if current_state == 'splash' then
+    love.graphics.printf('Press ENTER when ready.', 0, (VIRTUAL_HEIGHT / 2) - 6, VIRTUAL_WIDTH, 'center')
+  end
+
+  if current_state == 'playing' then
+    Player1:render()
+    Player2:render()
+    Ball:render()
+  end
 
   -- end rendering at virtual resolution
   push:finish()
@@ -59,23 +88,15 @@ end
 function love.keypressed(key)
   -- keys can be accessed by string name
   if key == 'escape' then
+    if current_state == 'playing' then
+      current_state = 'splash'
+      resetGame()
+      return
+    end
     -- function LÖVE gives us to terminate application
     love.event.quit()
+  elseif key == 'return' then
+    current_state = 'playing'
   end
 end
 
-function love.update(dt)
-  if love.keyboard.isDown('s') then
-    Player1:update(PADDLE_SPEED, dt)
-  elseif love.keyboard.isDown('w') then
-    Player1:update(-PADDLE_SPEED, dt)
-  end
-
-  if love.keyboard.isDown('j') then
-    Player2:update(PADDLE_SPEED, dt)
-  elseif love.keyboard.isDown('k') then
-    Player2:update(-PADDLE_SPEED, dt)
-  end
-
-  Ball:update(BALL_SPEED_X, BALL_SPEED_Y, dt)
-end
