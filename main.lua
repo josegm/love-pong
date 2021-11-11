@@ -14,9 +14,9 @@ PADDLE_HEIGHT = 20
 
 BALL_SIZE = 4
 
-PADDLE_SPEED = 200
+PADDLE_SPEED = 150
 
-MAX_SCORE = 2
+MAX_SCORE = 1
 
 local gameState = 'splash'
 
@@ -27,6 +27,12 @@ local  ball = Ball:create(BALL_SIZE)
 local player1Score = 0
 local player2Score = 0
 
+local sounds = {
+  ['paddle_hit'] = love.audio.newSource('sounds/paddle-hit.wav', 'static'),
+  ['score'] = love.audio.newSource('sounds/score.wav', 'static'),
+  ['wall_hit'] = love.audio.newSource('sounds/wall-hit.wav', 'static'),
+}
+
 function love.load()
   math.randomseed(os.time())
 
@@ -34,6 +40,7 @@ function love.load()
 
   SmallFont = love.graphics.newFont('font.ttf', 8)
   ScoreFont = love.graphics.newFont('font.ttf', 32)
+
   push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
     fullscreen = false,
     resizable = false,
@@ -64,20 +71,29 @@ function love.update(dt)
     player2:update(-PADDLE_SPEED, dt)
   end
 
+  -- Walls collision?
+  if ball.y <= 0 or ball.y >= VIRTUAL_HEIGHT - ball.size then
+    ball.dy = ball.dy * -1
+    love.audio.play(sounds.wall_hit)
+  end
+
+
   if ball:colides(player1) then
-    ball.dx = -ball.dx * 1.03
+    ball.dx = -ball.dx * 1.13
     ball.x = player1.x + 5
 
     -- keep velocity going in the same direction, but randomize it
     if ball.dy < 0 then
-      ball.dy = -math.random(10, 150)
+      ball.dy = -math.random(50, 150)
     else
-      ball.dy = math.random(10, 150)
+      ball.dy = math.random(50, 150)
     end
+
+    love.audio.play(sounds.paddle_hit)
   end
 
   if ball:colides(player2) then
-    ball.dx = -ball.dx * 1.03
+    ball.dx = -ball.dx * 1.13
     ball.x = player2.x - 4
 
     -- keep velocity going in the same direction, but randomize it
@@ -86,24 +102,24 @@ function love.update(dt)
     else
       ball.dy = math.random(10, 150)
     end
+
+    love.audio.play(sounds.paddle_hit)
   end
 
   if ball.x < 0 then
+    love.audio.play(sounds.score)
     player2Score = player2Score + 1
+    gameState = 'serve'
     if player2Score == MAX_SCORE then
       gameState = 'done'
     end
-    resetGame()
-    -- check if player1 wins
   elseif ball.x > VIRTUAL_WIDTH then
-    -- check if player2 wins
-
+    love.audio.play(sounds.score)
     player1Score = player1Score + 1
+    gameState = 'serve'
     if player1Score == MAX_SCORE then
       gameState = 'done'
     end
-
-    resetGame()
   end
 
   ball:update(dt)
@@ -121,7 +137,7 @@ function love.draw()
   love.graphics.setFont(SmallFont)
   love.graphics.printf('Pong with LOVE2D!', 0, 10, VIRTUAL_WIDTH, 'center')
 
-  if gameState == 'splash' then
+  if gameState == 'splash' or gameState == 'serve' then
     love.graphics.setFont(SmallFont)
     love.graphics.printf('Press ENTER when ready.', 0, (VIRTUAL_HEIGHT / 2) - 6, VIRTUAL_WIDTH, 'center')
   end
@@ -133,8 +149,11 @@ function love.draw()
   love.graphics.printf(player2Score, VIRTUAL_WIDTH / 2 , VIRTUAL_HEIGHT / 2, VIRTUAL_WIDTH / 2, 'center')
 
   if gameState == 'done' then
+    love.graphics.setFont(ScoreFont)
+    love.graphics.printf('GAME OVER', 0, (VIRTUAL_HEIGHT / 2) - VIRTUAL_HEIGHT / 3, VIRTUAL_WIDTH, 'center')
     love.graphics.setFont(SmallFont)
-    love.graphics.printf('END GAME', 0, (VIRTUAL_HEIGHT / 2) - 6, VIRTUAL_WIDTH, 'center')
+    local winner = player1Score == MAX_SCORE and 'Player 1' or 'Player 2'
+    love.graphics.printf(winner .. ' wins!!', 0, (VIRTUAL_HEIGHT / 2) + 8, VIRTUAL_WIDTH, 'center')
   end
 
   if gameState == 'playing' then
@@ -158,6 +177,11 @@ function love.keypressed(key)
     -- function LÖVE gives us to terminate application
     love.event.quit()
   elseif key == 'return' then
+    if gameState == 'done' then
+      player1Score = 0
+      player2Score = 0
+    end
+    resetGame()
     gameState = 'playing'
   end
 end

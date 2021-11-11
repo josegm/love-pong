@@ -42,11 +42,6 @@ function Ball:colides(paddle)
 end
 
 function Ball:update(dt)
-  -- Walls collision?
-  if self.y <= 0 or self.y >= VIRTUAL_HEIGHT - self.size then
-    self.dy = self.dy * -1
-  end
-
   self.x = self.x + self.dx * dt
   self.y = self.y + self.dy * dt
 end
