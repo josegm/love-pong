@@ -43,5 +43,3 @@ function Score:reset()
   self.player1 = 0
   self.player2 = 0
 end
-
-

@@ -1,4 +1,3 @@
-
 local push = require 'push'
 require 'Paddle'
 require 'Ball'
@@ -21,6 +20,7 @@ MAX_SCORE = 3
 
 local gameState = 'splash'
 local victoryPlayed = false
+local showFPS= true
 
 local  player1 = Paddle:create(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
 local  player2 = Paddle:create(VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
@@ -34,6 +34,23 @@ local sounds = {
   ['victory'] = love.audio.newSource('sounds/victory.mp3', 'static'),
 }
 
+local function displayFPS()
+  if showFPS == false then
+    return
+  end
+
+  love.graphics.setFont(SmallFont)
+  love.graphics.setColor(0, 255/255, 0, 255/255)
+  love.graphics.print(tostring(love.timer.getFPS()), 10, 10)
+  love.graphics.setColor(1, 1, 1, 1)
+end
+
+local function resetGame()
+  player1:reset()
+  player2:reset()
+  ball:reset()
+end
+
 function love.load()
   math.randomseed(os.time())
 
@@ -46,12 +63,6 @@ function love.load()
     resizable = false,
     vsync = true
   })
-end
-
-local function resetGame()
-  player1:reset()
-  player2:reset()
-  ball:reset()
 end
 
 function love.update(dt)
@@ -77,9 +88,8 @@ function love.update(dt)
     love.audio.play(sounds.wall_hit)
   end
 
-
   if ball:colides(player1) then
-    ball.dx = -ball.dx * 1.13
+    ball.dx = -ball.dx * 1.23
     ball.x = player1.x + 5
 
     -- keep velocity going in the same direction, but randomize it
@@ -93,14 +103,14 @@ function love.update(dt)
   end
 
   if ball:colides(player2) then
-    ball.dx = -ball.dx * 1.13
+    ball.dx = -ball.dx * 1.23
     ball.x = player2.x - 4
 
     -- keep velocity going in the same direction, but randomize it
     if ball.dy < 0 then
-      ball.dy = -math.random(10, 150)
+      ball.dy = -math.random(50, 150)
     else
-      ball.dy = math.random(10, 150)
+      ball.dy = math.random(50, 150)
     end
 
     love.audio.play(sounds.paddle_hit)
@@ -110,6 +120,7 @@ function love.update(dt)
     love.audio.play(sounds.score)
     score:player2Goal()
     gameState = 'serve'
+    ball.dx = ball.dx * -1
     if score:winner() then
       gameState = 'done'
     end
@@ -117,6 +128,7 @@ function love.update(dt)
     love.audio.play(sounds.score)
     score:player1Goal()
     gameState = 'serve'
+    ball.dx = ball.dx * -1
     if score:winner() then
       gameState = 'done'
     end
@@ -129,27 +141,28 @@ function love.draw()
   -- begin rendering at virtual resolution
   push:start()
 
-  -- clear the screen with a specific color; in this case, a color similar
-  -- to some versions of the original Pong
+  -- clear the screen with a specific color
   love.graphics.clear(40/255, 45/255, 52/255, 255/255)
-  -- condensed onto one line from last example
-  -- note we are now using virtual width and height now for text placement
-  love.graphics.setFont(SmallFont)
-  love.graphics.printf('Pong with LOVE2D!', 0, 10, VIRTUAL_WIDTH, 'center')
+
+  displayFPS()
 
   if gameState == 'splash' or gameState == 'serve' then
     victoryPlayed = false
+    love.graphics.setFont(SmallFont)
+    love.graphics.printf('Pong with LOVE2D!', 0, 10, VIRTUAL_WIDTH, 'center')
+
     love.graphics.setFont(SmallFont)
     love.graphics.printf('Press ENTER when ready.', 0, (VIRTUAL_HEIGHT / 2) - 6, VIRTUAL_WIDTH, 'center')
   end
 
   score:render()
-  -- render score
+
   if gameState == 'done' then
     if victoryPlayed == false then
       victoryPlayed = true
       love.audio.play(sounds.victory)
     end
+
     love.graphics.setFont(ScoreFont)
     love.graphics.printf('GAME OVER', 0, (VIRTUAL_HEIGHT / 2) - VIRTUAL_HEIGHT / 3, VIRTUAL_WIDTH, 'center')
     love.graphics.setFont(SmallFont)
@@ -178,10 +191,8 @@ function love.keypressed(key)
     if gameState == 'done' then
       score:reset()
     end
+
     resetGame()
     gameState = 'playing'
   end
 end
-
-
-
