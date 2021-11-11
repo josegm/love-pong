@@ -17,6 +17,8 @@ end
 function Ball:reset()
   self.x = VIRTUAL_WIDTH/2
   self.y = VIRTUAL_HEIGHT/2
+
+  self.dx = self.dx > 0 and math.random(80, 100) or math.random(-80, -100)
 end
 
 function Ball:render()

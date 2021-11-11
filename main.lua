@@ -13,6 +13,8 @@ PADDLE_WIDTH = 5
 PADDLE_HEIGHT = 20
 
 BALL_SIZE = 4
+BALL_SPEED_INCREASE = 1.08 -- 8%
+BALL_MAX_SPEED = 190
 
 PADDLE_SPEED = 150
 
@@ -21,6 +23,7 @@ MAX_SCORE = 3
 local gameState = 'splash'
 local victoryPlayed = false
 local showFPS= true
+local showBallSpeed= true
 
 local  player1 = Paddle:create(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
 local  player2 = Paddle:create(VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
@@ -44,6 +47,18 @@ local function displayFPS()
   love.graphics.print(tostring(love.timer.getFPS()), 10, 10)
   love.graphics.setColor(1, 1, 1, 1)
 end
+
+local function displayBallSpeed()
+  if showBallSpeed == false then
+    return
+  end
+
+  love.graphics.setFont(SmallFont)
+  love.graphics.setColor(255/255, 255/255, 0, 255/255)
+  love.graphics.print("Speed: " .. math.abs(math.floor(ball.dx)), VIRTUAL_WIDTH - 80, 10)
+  love.graphics.setColor(1, 1, 1, 1)
+end
+
 
 local function resetGame()
   player1:reset()
@@ -89,7 +104,7 @@ function love.update(dt)
   end
 
   if ball:colides(player1) then
-    ball.dx = -ball.dx * 1.23
+    ball.dx = math.min(math.abs(ball.dx * BALL_SPEED_INCREASE), BALL_MAX_SPEED)
     ball.x = player1.x + 5
 
     -- keep velocity going in the same direction, but randomize it
@@ -103,7 +118,7 @@ function love.update(dt)
   end
 
   if ball:colides(player2) then
-    ball.dx = -ball.dx * 1.23
+    ball.dx = -math.min(math.abs(ball.dx * BALL_SPEED_INCREASE), BALL_MAX_SPEED)
     ball.x = player2.x - 4
 
     -- keep velocity going in the same direction, but randomize it
@@ -141,7 +156,6 @@ function love.draw()
   -- begin rendering at virtual resolution
   push:start()
 
-  -- clear the screen with a specific color
   love.graphics.clear(40/255, 45/255, 52/255, 255/255)
 
   displayFPS()
@@ -170,6 +184,7 @@ function love.draw()
   end
 
   if gameState == 'playing' then
+    displayBallSpeed()
     player1:render()
     player2:render()
     ball:render()
