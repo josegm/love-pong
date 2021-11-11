@@ -16,7 +16,16 @@ BALL_SIZE = 4
 
 PADDLE_SPEED = 200
 
+MAX_SCORE = 2
+
 local gameState = 'splash'
+
+local  player1 = Paddle:create(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
+local  player2 = Paddle:create(VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
+local  ball = Ball:create(BALL_SIZE)
+
+local player1Score = 0
+local player2Score = 0
 
 function love.load()
   math.randomseed(os.time())
@@ -24,16 +33,12 @@ function love.load()
   love.graphics.setDefaultFilter('nearest', 'nearest')
 
   SmallFont = love.graphics.newFont('font.ttf', 8)
-  love.graphics.setFont(SmallFont)
+  ScoreFont = love.graphics.newFont('font.ttf', 32)
   push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
     fullscreen = false,
     resizable = false,
     vsync = true
   })
-
-  player1 = Paddle:create(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
-  player2 = Paddle:create(VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
-  ball = Ball:create(BALL_SIZE)
 end
 
 local function resetGame()
@@ -59,8 +64,6 @@ function love.update(dt)
     player2:update(-PADDLE_SPEED, dt)
   end
 
-  ball:update(dt)
-
   if ball:colides(player1) then
     ball.dx = -ball.dx * 1.03
     ball.x = player1.x + 5
@@ -73,7 +76,7 @@ function love.update(dt)
     end
   end
 
- if ball:colides(player2) then
+  if ball:colides(player2) then
     ball.dx = -ball.dx * 1.03
     ball.x = player2.x - 4
 
@@ -86,10 +89,24 @@ function love.update(dt)
   end
 
   if ball.x < 0 then
+    player2Score = player2Score + 1
+    if player2Score == MAX_SCORE then
+      gameState = 'done'
+    end
+    resetGame()
     -- check if player1 wins
   elseif ball.x > VIRTUAL_WIDTH then
     -- check if player2 wins
+
+    player1Score = player1Score + 1
+    if player1Score == MAX_SCORE then
+      gameState = 'done'
+    end
+
+    resetGame()
   end
+
+  ball:update(dt)
 end
 
 function love.draw()
@@ -101,10 +118,23 @@ function love.draw()
   love.graphics.clear(40/255, 45/255, 52/255, 255/255)
   -- condensed onto one line from last example
   -- note we are now using virtual width and height now for text placement
+  love.graphics.setFont(SmallFont)
   love.graphics.printf('Pong with LOVE2D!', 0, 10, VIRTUAL_WIDTH, 'center')
 
   if gameState == 'splash' then
+    love.graphics.setFont(SmallFont)
     love.graphics.printf('Press ENTER when ready.', 0, (VIRTUAL_HEIGHT / 2) - 6, VIRTUAL_WIDTH, 'center')
+  end
+
+  -- render score
+
+  love.graphics.setFont(ScoreFont)
+  love.graphics.printf(player1Score, 0, VIRTUAL_HEIGHT / 2, VIRTUAL_WIDTH / 2, 'center')
+  love.graphics.printf(player2Score, VIRTUAL_WIDTH / 2 , VIRTUAL_HEIGHT / 2, VIRTUAL_WIDTH / 2, 'center')
+
+  if gameState == 'done' then
+    love.graphics.setFont(SmallFont)
+    love.graphics.printf('END GAME', 0, (VIRTUAL_HEIGHT / 2) - 6, VIRTUAL_WIDTH, 'center')
   end
 
   if gameState == 'playing' then
