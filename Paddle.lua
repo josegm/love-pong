@@ -25,4 +25,6 @@ end
 
 function Paddle:update(speed, dt)
   self.y = self.y + speed * dt
+  self.y = math.max(0, self.y)
+  self.y = math.min((VIRTUAL_HEIGHT - self.height), self.y)
 end

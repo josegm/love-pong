@@ -1,7 +1,7 @@
 
 local push = require 'push'
-require 'paddle'
-require 'ball'
+require 'Paddle'
+require 'Ball'
 
 WINDOW_WIDTH=1280
 WINDOW_HEIGHT=720
@@ -16,9 +16,11 @@ BALL_SIZE = 4
 
 PADDLE_SPEED = 200
 
-local current_state = 'splash'
+local gameState = 'splash'
 
 function love.load()
+  math.randomseed(os.time())
+
   love.graphics.setDefaultFilter('nearest', 'nearest')
 
   SmallFont = love.graphics.newFont('font.ttf', 8)
@@ -29,35 +31,65 @@ function love.load()
     vsync = true
   })
 
-  Player1 = Paddle:create(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
-  Player2 = Paddle:create(VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
-  Ball = Ball:create(BALL_SIZE)
+  player1 = Paddle:create(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
+  player2 = Paddle:create(VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
+  ball = Ball:create(BALL_SIZE)
 end
 
-function resetGame()
-  Player1:reset()
-  Player2:reset()
-  Ball:reset()
+local function resetGame()
+  player1:reset()
+  player2:reset()
+  ball:reset()
 end
 
 function love.update(dt)
-  if current_state ~= 'playing' then
+  if gameState ~= 'playing' then
     return
   end
 
   if love.keyboard.isDown('s') then
-    Player1:update(PADDLE_SPEED, dt)
+    player1:update(PADDLE_SPEED, dt)
   elseif love.keyboard.isDown('w') then
-    Player1:update(-PADDLE_SPEED, dt)
+    player1:update(-PADDLE_SPEED, dt)
   end
 
   if love.keyboard.isDown('j') then
-    Player2:update(PADDLE_SPEED, dt)
+    player2:update(PADDLE_SPEED, dt)
   elseif love.keyboard.isDown('k') then
-    Player2:update(-PADDLE_SPEED, dt)
+    player2:update(-PADDLE_SPEED, dt)
   end
 
-  Ball:update(dt)
+  ball:update(dt)
+
+  if ball:colides(player1) then
+    ball.dx = -ball.dx * 1.03
+    ball.x = player1.x + 5
+
+    -- keep velocity going in the same direction, but randomize it
+    if ball.dy < 0 then
+      ball.dy = -math.random(10, 150)
+    else
+      ball.dy = math.random(10, 150)
+    end
+  end
+
+ if ball:colides(player2) then
+    ball.dx = -ball.dx * 1.03
+    ball.x = player2.x - 4
+
+    -- keep velocity going in the same direction, but randomize it
+    if ball.dy < 0 then
+      ball.dy = -math.random(10, 150)
+    else
+      ball.dy = math.random(10, 150)
+    end
+  end
+
+  if ball.x < 0 then
+    -- check if player1 wins
+  elseif ball.x > VIRTUAL_WIDTH then
+    -- check if player2 wins
+  end
 end
 
 function love.draw()
@@ -69,16 +101,16 @@ function love.draw()
   love.graphics.clear(40/255, 45/255, 52/255, 255/255)
   -- condensed onto one line from last example
   -- note we are now using virtual width and height now for text placement
-  love.graphics.printf('Hello LOVE!', 0, 10, VIRTUAL_WIDTH, 'center')
+  love.graphics.printf('Pong with LOVE2D!', 0, 10, VIRTUAL_WIDTH, 'center')
 
-  if current_state == 'splash' then
+  if gameState == 'splash' then
     love.graphics.printf('Press ENTER when ready.', 0, (VIRTUAL_HEIGHT / 2) - 6, VIRTUAL_WIDTH, 'center')
   end
 
-  if current_state == 'playing' then
-    Player1:render()
-    Player2:render()
-    Ball:render()
+  if gameState == 'playing' then
+    player1:render()
+    player2:render()
+    ball:render()
   end
 
   -- end rendering at virtual resolution
@@ -88,15 +120,15 @@ end
 function love.keypressed(key)
   -- keys can be accessed by string name
   if key == 'escape' then
-    if current_state == 'playing' then
-      current_state = 'splash'
+    if gameState == 'playing' then
+      gameState = 'splash'
       resetGame()
       return
     end
     -- function LÖVE gives us to terminate application
     love.event.quit()
   elseif key == 'return' then
-    current_state = 'playing'
+    gameState = 'playing'
   end
 end
 
