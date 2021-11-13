@@ -59,7 +59,6 @@ local function displayBallSpeed()
   love.graphics.setColor(1, 1, 1, 1)
 end
 
-
 local function resetGame()
   player1:reset()
   player2:reset()
@@ -91,9 +90,9 @@ function love.update(dt)
     player1:update(-PADDLE_SPEED, dt)
   end
 
-  if love.keyboard.isDown('j') then
+  if love.keyboard.isDown('j') or love.keyboard.isDown('down') then
     player2:update(PADDLE_SPEED, dt)
-  elseif love.keyboard.isDown('k') then
+  elseif love.keyboard.isDown('k') or love.keyboard.isDown('up') then
     player2:update(-PADDLE_SPEED, dt)
   end
 
