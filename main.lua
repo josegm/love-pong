@@ -20,13 +20,15 @@ PADDLE_SPEED = 150
 
 MAX_SCORE = 3
 
+SOUND = false
+
 local gameState = 'splash'
 local victoryPlayed = false
 local showFPS= true
 local showBallSpeed= true
 
-local  player1 = Paddle:create(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
-local  player2 = Paddle:create(VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
+local  player1 = Paddle:create('player1', 0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
+local  player2 = Paddle:create('player2', VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
 local  ball = Ball:create(BALL_SIZE)
 local score = Score:create(MAX_SCORE)
 
@@ -79,29 +81,28 @@ function love.load()
   })
 end
 
+function playSound(key)
+  if SOUND == true then
+    love.audio.play(key)
+  end
+end
+
 function love.update(dt)
   if gameState ~= 'playing' then
     return
   end
 
-  if love.keyboard.isDown('s') then
-    player1:update(PADDLE_SPEED, dt)
-  elseif love.keyboard.isDown('w') then
-    player1:update(-PADDLE_SPEED, dt)
-  end
-
-  if love.keyboard.isDown('j') or love.keyboard.isDown('down') then
-    player2:update(PADDLE_SPEED, dt)
-  elseif love.keyboard.isDown('k') or love.keyboard.isDown('up') then
-    player2:update(-PADDLE_SPEED, dt)
-  end
+  player1:update(dt)
+  player2:update(dt)
+  ball:update(dt)
 
   -- Walls collision?
   if ball.y <= 0 or ball.y >= VIRTUAL_HEIGHT - ball.size then
     ball.dy = ball.dy * -1
-    love.audio.play(sounds.wall_hit)
+    playSound(sounds.wall_hit)
   end
 
+  -- players hit the ball?
   if ball:colides(player1) then
     ball.dx = math.min(math.abs(ball.dx * BALL_SPEED_INCREASE), BALL_MAX_SPEED)
     ball.x = player1.x + 5
@@ -113,7 +114,7 @@ function love.update(dt)
       ball.dy = math.random(50, 150)
     end
 
-    love.audio.play(sounds.paddle_hit)
+    playSound(sounds.paddle_hit)
   end
 
   if ball:colides(player2) then
@@ -127,11 +128,12 @@ function love.update(dt)
       ball.dy = math.random(50, 150)
     end
 
-    love.audio.play(sounds.paddle_hit)
+    playSound(sounds.paddle_hit)
   end
 
+  -- winning condition?
   if ball.x < 0 then
-    love.audio.play(sounds.score)
+    playSound(sounds.score)
     score:player2Goal()
     gameState = 'serve'
     ball.dx = ball.dx * -1
@@ -139,7 +141,7 @@ function love.update(dt)
       gameState = 'done'
     end
   elseif ball.x > VIRTUAL_WIDTH then
-    love.audio.play(sounds.score)
+    playSound(sounds.score)
     score:player1Goal()
     gameState = 'serve'
     ball.dx = ball.dx * -1
@@ -147,8 +149,6 @@ function love.update(dt)
       gameState = 'done'
     end
   end
-
-  ball:update(dt)
 end
 
 function love.draw()
@@ -173,7 +173,7 @@ function love.draw()
   if gameState == 'done' then
     if victoryPlayed == false then
       victoryPlayed = true
-      love.audio.play(sounds.victory)
+      playSound(sounds.victory)
     end
 
     love.graphics.setFont(ScoreFont)
