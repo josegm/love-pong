@@ -20,7 +20,7 @@ PADDLE_SPEED = 150
 
 MAX_SCORE = 3
 
-SOUND = false
+SOUND = true
 
 local gameState = 'splash'
 local victoryPlayed = false
@@ -37,6 +37,16 @@ local sounds = {
   ['score'] = love.audio.newSource('sounds/score.wav', 'static'),
   ['wall_hit'] = love.audio.newSource('sounds/wall-hit.wav', 'static'),
   ['victory'] = love.audio.newSource('sounds/victory.mp3', 'static'),
+}
+
+-- TODO: Implement alterations to regular game play
+-- This 'alteed states' could be combined(ie. inverted & forwarded & intermitent)
+local alteredStates = {
+  'none', -- up id down and down is up
+  'inverted', -- up id down and down is up
+  'swapped', -- players swap screen positions
+  'forwarded', -- players paddles are closer now
+  'intermitent', -- players paddles cycle between visible - invisible
 }
 
 local function displayFPS()
@@ -184,6 +194,11 @@ function love.draw()
 
   if gameState == 'playing' then
     displayBallSpeed()
+    -- draw net
+    love.graphics.setColor(0.5, 0.5, 0.5)
+    love.graphics.line(VIRTUAL_WIDTH / 2, 0, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT)
+    love.graphics.setColor(1, 1, 1)
+
     player1:render()
     player2:render()
     ball:render()
