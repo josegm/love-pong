@@ -1,5 +1,4 @@
-Paddle = {}
-Paddle.__index = Paddle
+Paddle = Class{}
 
 PLAYER1_KEYS_UP = { 'w' }
 PLAYER1_KEYS_DOWN = { 's' }
@@ -20,19 +19,14 @@ KEYS = {
   }
 }
 
-function Paddle:create(playerName, posX, posY, width, height)
-  local paddle = {}
-  setmetatable(paddle, Paddle)
+function Paddle:init(playerName, posX, posY, width, height)
+  self.player = playerName
+  self.x = posX
+  self.y = posY
+  self.width = width
+  self.height = height
 
-  paddle.player = playerName
-  paddle.x = posX
-  paddle.y = posY
-  paddle.width = width
-  paddle.height = height
-
-  paddle:reset()
-
-  return paddle
+  self:reset()
 end
 
 function Paddle:reset()

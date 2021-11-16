@@ -1,22 +1,14 @@
-Score = {}
-Score.__index = Score
+Score = Class{}
 
-ScoreFont = love.graphics.newFont('font.ttf', 32)
-
-function Score:create(maxScore)
-  local score = {}
-  setmetatable(score, Score)
-
-  score.maxScore = maxScore
-  score:reset()
-
-  return score
+function Score:init(maxScore)
+  self.maxScore = maxScore
+  self:reset()
 end
 
 function Score:render()
   love.graphics.setFont(ScoreFont)
-  love.graphics.printf(self.player1, 0, VIRTUAL_HEIGHT / 2, VIRTUAL_WIDTH / 2, 'center')
-  love.graphics.printf(self.player2, VIRTUAL_WIDTH / 2 , VIRTUAL_HEIGHT / 2, VIRTUAL_WIDTH / 2, 'center')
+  love.graphics.printf(self.player1, 0, VIRTUAL_HEIGHT / 2 - 16, VIRTUAL_WIDTH / 2, 'center')
+  love.graphics.printf(self.player2, VIRTUAL_WIDTH / 2 , VIRTUAL_HEIGHT / 2 - 16, VIRTUAL_WIDTH / 2, 'center')
 end
 
 function Score:player1Goal()

@@ -1,4 +1,7 @@
 local push = require 'push'
+Class = require 'class'
+
+require 'GameState'
 require 'Paddle'
 require 'Ball'
 require 'Score'
@@ -22,22 +25,18 @@ MAX_SCORE = 3
 
 SOUND = true
 
-local gameState = 'splash'
-local victoryPlayed = false
-local showFPS= true
-local showBallSpeed= true
-
-local  player1 = Paddle:create('player1', 0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
-local  player2 = Paddle:create('player2', VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
-local  ball = Ball:create(BALL_SIZE)
-local score = Score:create(MAX_SCORE)
-
-local sounds = {
+SOUNDS = {
   ['paddle_hit'] = love.audio.newSource('sounds/paddle-hit.wav', 'static'),
   ['score'] = love.audio.newSource('sounds/score.wav', 'static'),
   ['wall_hit'] = love.audio.newSource('sounds/wall-hit.wav', 'static'),
   ['victory'] = love.audio.newSource('sounds/victory.mp3', 'static'),
 }
+
+local showFPS= true
+
+local player1 = Paddle('player1', 0, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
+local player2 = Paddle('player2', VIRTUAL_WIDTH - PADDLE_WIDTH, 0, PADDLE_WIDTH, PADDLE_HEIGHT)
+local game = GameState(player1, player2, Ball(BALL_SIZE), Score(MAX_SCORE))
 
 -- TODO: Implement alterations to regular game play
 -- This 'alteed states' could be combined(ie. inverted & forwarded & intermitent)
@@ -57,24 +56,8 @@ local function displayFPS()
   love.graphics.setFont(SmallFont)
   love.graphics.setColor(0, 255/255, 0, 255/255)
   love.graphics.print(tostring(love.timer.getFPS()), 10, 10)
+--  love.graphics.print(game.state.state)
   love.graphics.setColor(1, 1, 1, 1)
-end
-
-local function displayBallSpeed()
-  if showBallSpeed == false then
-    return
-  end
-
-  love.graphics.setFont(SmallFont)
-  love.graphics.setColor(255/255, 255/255, 0, 255/255)
-  love.graphics.print("Speed: " .. math.abs(math.floor(ball.dx)), VIRTUAL_WIDTH - 80, 10)
-  love.graphics.setColor(1, 1, 1, 1)
-end
-
-local function resetGame()
-  player1:reset()
-  player2:reset()
-  ball:reset()
 end
 
 function love.load()
@@ -82,6 +65,7 @@ function love.load()
 
   love.graphics.setDefaultFilter('nearest', 'nearest')
 
+  ScoreFont = love.graphics.newFont('font.ttf', 32)
   SmallFont = love.graphics.newFont('font.ttf', 8)
 
   push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
@@ -91,137 +75,26 @@ function love.load()
   })
 end
 
-function playSound(key)
+function PlaySound(key)
   if SOUND == true then
     love.audio.play(key)
   end
 end
 
 function love.update(dt)
-  if gameState ~= 'playing' then
-    return
-  end
-
-  player1:update(dt)
-  player2:update(dt)
-  ball:update(dt)
-
-  -- Walls collision?
-  if ball.y <= 0 or ball.y >= VIRTUAL_HEIGHT - ball.size then
-    ball.dy = ball.dy * -1
-    playSound(sounds.wall_hit)
-  end
-
-  -- players hit the ball?
-  if ball:colides(player1) then
-    ball.dx = math.min(math.abs(ball.dx * BALL_SPEED_INCREASE), BALL_MAX_SPEED)
-    ball.x = player1.x + 5
-
-    -- keep velocity going in the same direction, but randomize it
-    if ball.dy < 0 then
-      ball.dy = -math.random(50, 150)
-    else
-      ball.dy = math.random(50, 150)
-    end
-
-    playSound(sounds.paddle_hit)
-  end
-
-  if ball:colides(player2) then
-    ball.dx = -math.min(math.abs(ball.dx * BALL_SPEED_INCREASE), BALL_MAX_SPEED)
-    ball.x = player2.x - 4
-
-    -- keep velocity going in the same direction, but randomize it
-    if ball.dy < 0 then
-      ball.dy = -math.random(50, 150)
-    else
-      ball.dy = math.random(50, 150)
-    end
-
-    playSound(sounds.paddle_hit)
-  end
-
-  -- winning condition?
-  if ball.x < 0 then
-    playSound(sounds.score)
-    score:player2Goal()
-    gameState = 'serve'
-    ball.dx = ball.dx * -1
-    if score:winner() then
-      gameState = 'done'
-    end
-  elseif ball.x > VIRTUAL_WIDTH then
-    playSound(sounds.score)
-    score:player1Goal()
-    gameState = 'serve'
-    ball.dx = ball.dx * -1
-    if score:winner() then
-      gameState = 'done'
-    end
-  end
+  game:update(dt)
 end
 
 function love.draw()
-  -- begin rendering at virtual resolution
   push:start()
 
   love.graphics.clear(40/255, 45/255, 52/255, 255/255)
-
   displayFPS()
+  game:draw()
 
-  if gameState == 'splash' or gameState == 'serve' then
-    victoryPlayed = false
-    love.graphics.setFont(SmallFont)
-    love.graphics.printf('Pong with LOVE2D!', 0, 10, VIRTUAL_WIDTH, 'center')
-
-    love.graphics.setFont(SmallFont)
-    love.graphics.printf('Press ENTER when ready.', 0, (VIRTUAL_HEIGHT / 2) - 6, VIRTUAL_WIDTH, 'center')
-  end
-
-  score:render()
-
-  if gameState == 'done' then
-    if victoryPlayed == false then
-      victoryPlayed = true
-      playSound(sounds.victory)
-    end
-
-    love.graphics.setFont(ScoreFont)
-    love.graphics.printf('GAME OVER', 0, (VIRTUAL_HEIGHT / 2) - VIRTUAL_HEIGHT / 3, VIRTUAL_WIDTH, 'center')
-    love.graphics.setFont(SmallFont)
-    love.graphics.printf(score:winner() .. ' wins!!', 0, (VIRTUAL_HEIGHT / 2) + 8, VIRTUAL_WIDTH, 'center')
-  end
-
-  if gameState == 'playing' then
-    displayBallSpeed()
-    -- draw net
-    love.graphics.setColor(0.5, 0.5, 0.5)
-    love.graphics.line(VIRTUAL_WIDTH / 2, 0, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT)
-    love.graphics.setColor(1, 1, 1)
-
-    player1:render()
-    player2:render()
-    ball:render()
-  end
-
-  -- end rendering at virtual resolution
   push:finish()
 end
 
 function love.keypressed(key)
-  if key == 'escape' then
-    if gameState == 'playing' then
-      gameState = 'splash'
-      resetGame()
-      return
-    end
-    love.event.quit()
-  elseif key == 'return' then
-    if gameState == 'done' then
-      score:reset()
-    end
-
-    resetGame()
-    gameState = 'playing'
-  end
+  game:keypressed(key)
 end
