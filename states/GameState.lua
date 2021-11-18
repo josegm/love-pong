@@ -1,7 +1,7 @@
-require 'PlayState'
-require 'SplashState'
-require 'ServeState'
-require 'WinState'
+require 'states.PlayState'
+require 'states.SplashState'
+require 'states.ServeState'
+require 'states.WinState'
 
 GameState = Class{}
 

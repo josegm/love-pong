@@ -1,7 +1,7 @@
 local push = require 'push'
 Class = require 'class'
 
-require 'GameState'
+require 'states.GameState'
 require 'Paddle'
 require 'Ball'
 require 'Score'
